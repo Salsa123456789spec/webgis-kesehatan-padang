@@ -6,7 +6,7 @@ const multer = require('multer');
 const fs = require('fs');
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json()); // Add support for JSON bodies
@@ -31,13 +31,23 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// Create MySQL connection
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'webgis_faskes_padang'
-});
+// Create MySQL connection (mendukung cloud database via process.env)
+const dbConfig = {
+    host: process.env.MYSQLHOST || process.env.DB_HOST || 'localhost',
+    user: process.env.MYSQLUSER || process.env.DB_USER || 'root',
+    password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || '',
+    database: process.env.MYSQLDATABASE || process.env.DB_NAME || 'webgis_faskes_padang',
+    port: process.env.MYSQLPORT || process.env.DB_PORT || 3306
+};
+
+// Tambahkan konfigurasi SSL jika menggunakan database cloud (seperti TiDB)
+if (process.env.MYSQLHOST) {
+    dbConfig.ssl = {
+        rejectUnauthorized: true
+    };
+}
+
+const db = mysql.createConnection(dbConfig);
 
 db.connect((err) => {
     if (err) {
