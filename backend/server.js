@@ -33,11 +33,11 @@ const upload = multer({ storage: storage });
 
 // Create MySQL connection
 const db = mysql.createConnection({
-    host: process.env.MYSQLHOST || 'localhost',
+    host: process.env.MYSQLHOST || 'reseau.proxy.rlwy.net',
     user: process.env.MYSQLUSER || 'root',
-    password: process.env.MYSQLPASSWORD || '',
-    database: process.env.MYSQLDATABASE || 'webgis_faskes_padang',
-    port: process.env.MYSQLPORT || 3306
+    password: process.env.MYSQLPASSWORD || 'wfMKvlUKUmMeKdGerUQzffftCXVYuXsH',
+    database: process.env.MYSQLDATABASE || 'railway',
+    port: process.env.MYSQLPORT || 34386
 });
 
 db.connect((err) => {
