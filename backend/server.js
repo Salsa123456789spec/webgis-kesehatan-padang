@@ -6,7 +6,7 @@ const multer = require('multer');
 const fs = require('fs');
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json()); // Add support for JSON bodies
@@ -33,10 +33,11 @@ const upload = multer({ storage: storage });
 
 // Create MySQL connection
 const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'webgis_faskes_padang'
+    host: process.env.MYSQLHOST || 'localhost',
+    user: process.env.MYSQLUSER || 'root',
+    password: process.env.MYSQLPASSWORD || '',
+    database: process.env.MYSQLDATABASE || 'webgis_faskes_padang',
+    port: process.env.MYSQLPORT || 3306
 });
 
 db.connect((err) => {
