@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGIS Fasilitas Kesehatan Kota Padang</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <!-- Leaflet Routing Machine CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+    
+    <!-- Leaflet Control Geocoder CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app-container">
+        <!-- Sidebar/Panel -->
+        <div class="sidebar">
+            <div class="header">
+                <h1>HealthGIS Padang</h1>
+                <p>Temukan fasilitas kesehatan terdekat</p>
+            </div>
+            
+            <div class="search-box" style="display: flex; gap: 8px;">
+                <select id="search-input" style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; background: white;">
+                    <option value="">-- Pilih Klinik --</option>
+                </select>
+                <button id="btn-search-clinic" class="btn primary" style="padding: 10px 15px; width: auto; font-weight: bold;">Cari</button>
+            </div>
+
+            <div class="controls">
+                <button id="btn-locate" class="btn primary">
+                    <span class="icon">📍</span> Lacak Lokasi Saya
+                </button>
+                <button id="btn-nearest" class="btn secondary" disabled>
+                    <span class="icon">🏥</span> Cari 3 Klinik Terdekat
+                </button>
+            </div>
+            
+            <div id="nearest-list-panel" class="info-panel hidden" style="margin-bottom: 15px;">
+                <h3 style="margin-top: 0;">3 Klinik Terdekat (Zona)</h3>
+                <div id="nearest-list-content" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- List items will be injected here -->
+                </div>
+            </div>
+
+            <div id="info-panel" class="info-panel hidden" style="position: relative;">
+                <span id="close-info-panel" style="position: absolute; right: 15px; top: 15px; font-size: 20px; font-weight: bold; cursor: pointer; color: #888; transition: color 0.2s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#888'">&times;</span>
+                <h3 style="margin-right: 20px;">Detail Fasilitas Terdekat</h3>
+                <div class="info-content">
+                    <p><strong>Nama:</strong> <span id="info-nama">-</span></p>
+                    <p><strong>Alamat:</strong> <span id="info-alamat">-</span></p>
+                    <p><strong>Jarak Garis Lurus:</strong> <span id="info-jarak">-</span> km</p>
+                    <p><strong>Jam Operasional:</strong><br><span id="info-jam" style="font-size: 13px; color: #555;">-</span></p>
+                </div>
+                <div id="route-info" class="route-info hidden">
+                    <div class="travel-modes" style="display: flex; gap: 5px; margin-bottom: 10px; justify-content: center;">
+                        <button class="btn-mode active" data-profile="driving" style="flex: 1; padding: 5px; font-size: 12px; border: 1px solid #007bff; background: #007bff; color: white; border-radius: 4px; cursor: pointer;">🚗 Mobil</button>
+                        <button class="btn-mode" data-profile="motor" style="flex: 1; padding: 5px; font-size: 12px; border: 1px solid #ccc; background: white; color: #333; border-radius: 4px; cursor: pointer;">🏍️ Motor</button>
+                        <button class="btn-mode" data-profile="foot" style="flex: 1; padding: 5px; font-size: 12px; border: 1px solid #ccc; background: white; color: #333; border-radius: 4px; cursor: pointer;">🚶 Jalan Kaki</button>
+                    </div>
+                    <p><strong>Estimasi Jarak Rute:</strong> <span id="route-distance">-</span></p>
+                    <p><strong>Waktu Tempuh:</strong> <span id="route-time">-</span></p>
+                </div>
+                <button id="btn-ulasan-nearest" class="btn secondary" style="margin-top: 10px; width: 100%; font-size: 13px;">Beri / Lihat Ulasan</button>
+                <button id="btn-mulai-rute" class="btn primary" style="margin-top: 10px; width: 100%; font-size: 13px;">🗺️ Mulai Rute</button>
+            </div>
+        </div>
+
+        <!-- Review Modal -->
+        <div id="review-modal" class="modal hidden">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h2 id="modal-klinik-nama">Nama Klinik</h2>
+                
+                <div class="review-section">
+                    <h3>Beri Ulasan</h3>
+                    <form id="review-form" enctype="multipart/form-data">
+                        <input type="hidden" id="review-klinik-id">
+                        <input type="text" id="review-nama" placeholder="Nama Anda" required>
+                        <div class="star-rating">
+                            <span class="star" data-value="1">&#9733;</span>
+                            <span class="star" data-value="2">&#9733;</span>
+                            <span class="star" data-value="3">&#9733;</span>
+                            <span class="star" data-value="4">&#9733;</span>
+                            <span class="star" data-value="5">&#9733;</span>
+                        </div>
+                        <input type="hidden" id="review-rating" required>
+                        <textarea id="review-komentar" placeholder="Tulis komentar Anda (opsional)..." rows="3"></textarea>
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label for="review-foto" style="display: block; margin-bottom: 5px; font-size: 14px; color: #555;">Unggah Foto (Kamera / Galeri):</label>
+                            <input type="file" id="review-foto" name="foto" accept="image/*" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                        </div>
+                        <button type="submit" class="btn primary">Kirim Ulasan</button>
+                    </form>
+                </div>
+
+                <div class="reviews-list-section">
+                    <h3>Ulasan Sebelumnya</h3>
+                    <div id="reviews-container">
+                        <!-- Reviews will be loaded here -->
+                        <p class="text-muted">Memuat ulasan...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Navigation Overlay -->
+        <div id="nav-overlay" class="hidden" style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(0, 123, 255, 0.9); color: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); text-align: center; display: flex; flex-direction: column; gap: 10px; min-width: 250px; transition: all 0.3s ease;">
+            <h3 style="margin: 0; font-size: 16px;">📍 Navigasi Aktif</h3>
+            <p style="margin: 0; font-size: 13px; opacity: 0.9;">Peta mengikuti pergerakan Anda.</p>
+            <button id="btn-stop-nav" class="btn" style="background: white; color: #dc3545; border: none; font-weight: bold; margin-top: 5px; padding: 8px; cursor: pointer; border-radius: 4px;">⛔ Akhiri Rute</button>
+        </div>
+
+        <!-- Map Container -->
+        <div id="map"></div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- Leaflet Routing Machine JS -->
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+    
+    <!-- Leaflet Control Geocoder JS -->
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    
+    <!-- Custom Script -->
+    <script src="script.js"></script>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container"></div>
+</body>
+</html>
